@@ -6,8 +6,7 @@ async function main(): Promise<void> {
   
   try {
     await producer.connect();
-    
-    // Send a test message
+
     await producer.sendMessage(`Hello Kafka! - ${new Date().toISOString()}`);
     
     Logger.info('Producer finished successfully');

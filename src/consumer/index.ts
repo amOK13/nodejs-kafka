@@ -15,7 +15,6 @@ async function main(): Promise<void> {
     Logger.error('Consumer error:', error);
   }
 
-  // Graceful shutdown
   process.on('SIGINT', async () => {
     Logger.info('Shutting down consumer...');
     await consumer.disconnect();
