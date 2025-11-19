@@ -8,13 +8,20 @@ async function main(): Promise<void> {
   try {
     await producer.connect();
 
-   const customMessage = process.argv[2];
+    const customMessage = process.argv[2];
     
     if (customMessage) {
       await producer.sendMessage(customMessage);
       Logger.info('Producer finished successfully');
     } else {
-      await interactiveMode(producer);
+      // Mode interactif seulement en développement
+      if (process.env.NODE_ENV === 'development') {
+        await interactiveMode(producer);
+      } else {
+        Logger.error('Interactive mode is only available in development environment (NODE_ENV=development)');
+        Logger.info('Usage: npm run producer "Your message here"');
+        process.exit(1);
+      }
     }
     
   } catch (error) {
