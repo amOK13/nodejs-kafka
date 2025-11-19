@@ -13,7 +13,13 @@
     "dev:producer": "ts-node src/producer/index.ts",
     "dev:consumer": "ts-node src/consumer/index.ts",
     "clean": "rimraf dist",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docker:build": "docker build -t nodejs-kafka .",
+    "docker:up": "docker-compose -f docker/docker-compose.yml up -d",
+    "docker:down": "docker-compose -f docker/docker-compose.yml down",
+    "docker:logs": "docker-compose -f docker/docker-compose.yml logs -f",
+    "docker:producer": "docker-compose -f docker/docker-compose.yml exec producer sh",
+    "docker:consumer": "docker-compose -f docker/docker-compose.yml logs -f consumer"
   },
   "keywords": [
     "nodejs",
