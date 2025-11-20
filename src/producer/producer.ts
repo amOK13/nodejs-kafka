@@ -1,35 +1,30 @@
 import { Producer } from 'kafkajs';
-import { KafkaClient } from '../common/kafkaClient';
-import { kafkaConfig } from '../common/config';
-import { Logger } from '../common/logger';
+import { createProducer } from '../common/kafkaClient';
+import { config } from '../common/config';
+import { logger } from '../common/logger';
 
 export class MessageProducer {
-  private producer: Producer;
-  private kafkaClient: KafkaClient;
+  private producer!: Producer;
 
-  constructor() {
-    this.kafkaClient = new KafkaClient();
-    this.producer = this.kafkaClient.createProducer();
-  }
-
-  async connect(): Promise<void> {
-    await this.producer.connect();
-    Logger.info('Producer connected');
+  async initialize(): Promise<void> {
+    this.producer = await createProducer();
   }
 
   async sendMessage(message: string): Promise<void> {
     await this.producer.send({
-      topic: kafkaConfig.topic,
+      topic: config.kafkaTopic,
       messages: [{
         value: message,
         timestamp: Date.now().toString()
       }]
     });
-    Logger.info('Message sent:', message);
+    logger.info('Message sent:', message);
   }
 
   async disconnect(): Promise<void> {
-    await this.producer.disconnect();
-    Logger.info('Producer disconnected');
+    if (this.producer) {
+      await this.producer.disconnect();
+      logger.info('Producer disconnected');
+    }
   }
 }

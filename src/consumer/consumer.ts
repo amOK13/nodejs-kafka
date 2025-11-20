@@ -1,31 +1,21 @@
 import { Consumer } from 'kafkajs';
-import { KafkaClient } from '../common/kafkaClient';
-import { kafkaConfig } from '../common/config';
-import { Logger } from '../common/logger';
+import { createConsumer } from '../common/kafkaClient';
+import { config } from '../common/config';
+import { logger } from '../common/logger';
 
 export class MessageConsumer {
-  private consumer: Consumer;
-  private kafkaClient: KafkaClient;
+  private consumer!: Consumer;
 
-  constructor() {
-    this.kafkaClient = new KafkaClient();
-    this.consumer = this.kafkaClient.createConsumer();
-  }
-
-  async connect(): Promise<void> {
-    await this.consumer.connect();
-    Logger.info('Consumer connected');
-  }
-
-  async subscribe(): Promise<void> {
-    await this.consumer.subscribe({ topic: kafkaConfig.topic, fromBeginning: true });
-    Logger.info(`Subscribed to topic: ${kafkaConfig.topic}`);
+  async initialize(): Promise<void> {
+    this.consumer = await createConsumer();
+    await this.consumer.subscribe({ topic: config.kafkaTopic, fromBeginning: true });
+    logger.info(`Subscribed to topic: ${config.kafkaTopic}`);
   }
 
   async startConsuming(): Promise<void> {
     await this.consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
-        Logger.info('Received message:', {
+        logger.info('Received message:', {
           topic,
           partition,
           value: message.value?.toString(),
@@ -35,8 +25,10 @@ export class MessageConsumer {
     });
   }
 
-  async disconnect(): Promise<void> {
-    await this.consumer.disconnect();
-    Logger.info('Consumer disconnected');
+  async stop(): Promise<void> {
+    if (this.consumer) {
+      await this.consumer.disconnect();
+      logger.info('Consumer disconnected');
+    }
   }
 }

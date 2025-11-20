@@ -1,31 +1,40 @@
 import { MessageProducer } from './producer';
-import { Logger } from '../common/logger';
+import { logger } from '../common/logger';
 import * as readline from 'readline';
 
 async function main(): Promise<void> {
+  logger.info(`Starting Kafka Producer`);
+  logger.info(`Environment: ${process.env.NODE_ENV || 'undefined'}`);
+  logger.info(`Kafka Brokers: ${process.env.KAFKA_BROKERS || 'localhost:9092'}`);
+  logger.info(`Topic: ${process.env.KAFKA_TOPIC || 'test-topic'}`);
+  logger.info(`Client ID: ${process.env.KAFKA_CLIENT_ID || 'nodejs-kafka-client'}`);
+
   const producer = new MessageProducer();
   
   try {
-    await producer.connect();
+    await producer.initialize();
 
-    const customMessage = process.argv[2];
+    const args = process.argv.slice(2);
     
-    if (customMessage) {
-      await producer.sendMessage(customMessage);
-      Logger.info('Producer finished successfully');
-    } else {
-      // Mode interactif seulement en développement
+    if (args.length === 0) {
       if (process.env.NODE_ENV === 'development') {
         await interactiveMode(producer);
       } else {
-        Logger.error('Interactive mode is only available in development environment (NODE_ENV=development)');
-        Logger.info('Usage: npm run producer "Your message here"');
+        logger.info('Producer finished successfully');
+        return;
+      }
+    } else {
+      if (process.env.NODE_ENV === 'development') {
+        logger.error('Interactive mode is only available in development environment (NODE_ENV=development)');
+        logger.info('Usage: npm run producer "Your message here"');
         process.exit(1);
       }
+      
+      await producer.sendMessage(args.join(' '));
     }
-    
   } catch (error) {
-    Logger.error('Producer error:', error);
+    logger.error('Producer error:', error);
+    process.exit(1);
   } finally {
     await producer.disconnect();
   }
@@ -37,7 +46,7 @@ async function interactiveMode(producer: MessageProducer): Promise<void> {
     output: process.stdout
   });
 
-  Logger.info('Interactive mode started. Type messages to send (Ctrl+C to exit):');
+  logger.info('Interactive mode started. Type messages to send (Ctrl+C to exit):');
   
   const askForMessage = (): Promise<void> => {
     return new Promise((resolve) => {
@@ -46,9 +55,9 @@ async function interactiveMode(producer: MessageProducer): Promise<void> {
         
         try {
           await producer.sendMessage(message);
-          Logger.info('Message sent successfully!');
+          logger.info('Message sent successfully!');
         } catch (error) {
-          Logger.error('Failed to send message:', error);
+          logger.error('Failed to send message:', error);
         }
 
         askForMessage().then(resolve);
@@ -57,7 +66,7 @@ async function interactiveMode(producer: MessageProducer): Promise<void> {
   };
 
   rl.on('SIGINT', () => {
-    Logger.info('\nExiting interactive mode...');
+    logger.info('\nExiting interactive mode...');
     rl.close();
     process.exit(0);
   });
