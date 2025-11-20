@@ -5,6 +5,10 @@ import { logger } from '../common/logger';
 import { MessageValidator, MessageSchema } from '../common/messageValidator';
 import { MessageSerializer, MessageSerializerFactory, SerializationFormat } from '../common/messageSerializer';
 import { EnhancedProducerConfig, ProducerConfigBuilder, ProducerPresets } from '../common/producerConfig';
+import { MessageRouter, RoutingRule, MessageMetadata } from '../common/messageRouter';
+import { Partitioner, PartitionerFactory } from '../common/partitioners';
+import { TransactionManager, TransactionMessage, TransactionOptions } from '../common/transactionManager';
+import { MetadataManager, EnhancedMessageMetadata } from '../common/metadataManager';
 
 export interface ProducerOptions {
   serializationFormat?: SerializationFormat;
@@ -12,6 +16,12 @@ export interface ProducerOptions {
   schema?: MessageSchema;
   config?: EnhancedProducerConfig;
   preset?: 'highThroughput' | 'lowLatency' | 'reliable' | 'balanced';
+  enableRouting?: boolean;
+  defaultRoutingTopic?: string;
+  partitioner?: Partitioner;
+  enableTransactions?: boolean;
+  transactionOptions?: TransactionOptions;
+  defaultMetadata?: Partial<EnhancedMessageMetadata>;
 }
 
 export class MessageProducer {
@@ -22,6 +32,10 @@ export class MessageProducer {
   private compressionType?: CompressionTypes;
   private batchingConfig: { maxBatchSize: number; lingerMs: number };
   private timeoutMs: number;
+  private messageRouter?: MessageRouter;
+  private partitioner?: Partitioner;
+  private transactionManager?: TransactionManager;
+  private metadataManager: MetadataManager;
 
   constructor(private options: ProducerOptions = {}) {
     this.enableValidation = options.enableValidation ?? true;
@@ -33,6 +47,11 @@ export class MessageProducer {
       lingerMs: options.config?.batching?.lingerMs ?? 100
     };
     this.timeoutMs = options.config?.timeout?.requestTimeoutMs ?? 30000;
+    if (options.enableRouting) {
+      this.messageRouter = new MessageRouter(options.defaultRoutingTopic || config.kafkaTopic);
+    }
+    this.partitioner = options.partitioner;
+    this.metadataManager = new MetadataManager(options.defaultMetadata);
   }
 
   async initialize(): Promise<void> {
@@ -49,18 +68,31 @@ export class MessageProducer {
     this.producer = kafka.producer(producerConfig);
     await this.producer.connect();
 
+    if (this.options.enableTransactions) {
+      this.transactionManager = new TransactionManager(this.producer, this.options.transactionOptions);
+    }
+
     logger.info('Enhanced producer initialized', {
       preset: this.options.preset,
       compression: this.compressionType,
       batching: this.batchingConfig,
       timeout: this.timeoutMs,
       validation: this.enableValidation,
-      serialization: this.options.serializationFormat
+      serialization: this.options.serializationFormat || 'json',
+      routing: !!this.messageRouter,
+      partitioner: this.partitioner?.getName(),
+      transactions: !!this.transactionManager
     });
   }
 
-  async sendMessage(message: any, key?: string, headers?: Record<string, string>): Promise<void> {
+  async sendMessage(
+    message: any,
+    key?: string,
+    headers?: Record<string, string>,
+    metadata?: Partial<EnhancedMessageMetadata>
+  ): Promise<void> {
     try {
+      const enhancedMetadata = this.metadataManager.createMetadata(metadata);
       if (this.enableValidation) {
         const validationResult = this.validator.validate(message);
         if (!validationResult.isValid) {
@@ -73,22 +105,51 @@ export class MessageProducer {
           throw error;
         }
       }
+      let targetTopic = config.kafkaTopic;
+      if (this.messageRouter) {
+        const routingResult = this.messageRouter.route(message, enhancedMetadata);
+        targetTopic = routingResult.topic;
+        if (routingResult.matchedRule) {
+          logger.debug('Message routed', {
+            originalTopic: config.kafkaTopic,
+            targetTopic,
+            rule: routingResult.matchedRule.name
+          });
+        }
+      }
 
       const serializedMessage = this.serializer.serialize(message);
+      const combinedHeaders = { ...headers };
+      const metadataHeaders = this.metadataManager.metadataToHeaders(enhancedMetadata);
       const kafkaHeaders: Record<string, Buffer> = {};
+      Object.entries(metadataHeaders).forEach(([key, value]) => {
+        kafkaHeaders[key] = value;
+      });
 
-      if (headers) {
-        Object.keys(headers).forEach(headerKey => {
-          kafkaHeaders[headerKey] = Buffer.from(headers[headerKey]);
+      if (combinedHeaders) {
+        Object.keys(combinedHeaders).forEach(headerKey => {
+          kafkaHeaders[headerKey] = Buffer.from(combinedHeaders[headerKey]);
+        });
+      }
+
+      let partition: number | undefined;
+      if (this.partitioner) {
+        partition = this.partitioner.partition({
+          topic: targetTopic,
+          partitionCount: 3,
+          message,
+          key,
+          metadata: enhancedMetadata
         });
       }
 
       await this.producer.send({
-        topic: config.kafkaTopic,
+        topic: targetTopic,
         compression: this.compressionType,
         timeout: this.timeoutMs,
         messages: [
           {
+            partition,
             key: key ? Buffer.from(key) : undefined,
             value: serializedMessage,
             headers: Object.keys(kafkaHeaders).length > 0 ? kafkaHeaders : undefined,
@@ -193,6 +254,64 @@ export class MessageProducer {
       this.timeoutMs = config.timeout.requestTimeoutMs ?? this.timeoutMs;
     }
     logger.info('Producer configuration updated', { config });
+  }
+
+  addRoutingRule(rule: RoutingRule): void {
+    if (!this.messageRouter) {
+      throw new Error('Routing is not enabled. Set enableRouting: true in options.');
+    }
+    this.messageRouter.addRule(rule);
+    logger.info('Routing rule added', { ruleId: rule.id, name: rule.name });
+  }
+
+  removeRoutingRule(ruleId: string): boolean {
+    if (!this.messageRouter) {
+      return false;
+    }
+    const removed = this.messageRouter.removeRule(ruleId);
+    if (removed) {
+      logger.info('Routing rule removed', { ruleId });
+    }
+    return removed;
+  }
+
+  getRoutingRules(): RoutingRule[] {
+    return this.messageRouter?.getRules() || [];
+  }
+
+  async sendInTransaction<T>(
+    operation: (sender: (messages: TransactionMessage[]) => Promise<void>) => Promise<T>
+  ): Promise<T> {
+    if (!this.transactionManager) {
+      throw new Error('Transactions are not enabled. Set enableTransactions: true in options.');
+    }
+    const result = await this.transactionManager.executeTransaction(operation);
+    return result.result;
+  }
+
+  getActiveTransactionId(): string | null {
+    return this.transactionManager?.getActiveTransactionId() || null;
+  }
+
+  setDefaultMetadata(metadata: Partial<EnhancedMessageMetadata>): void {
+    this.metadataManager.setDefaultMetadata(metadata);
+    logger.info('Default metadata updated', { metadata });
+  }
+
+  enrichMetadata(
+    baseMetadata: Partial<EnhancedMessageMetadata>,
+    enrichments: Partial<EnhancedMessageMetadata>
+  ): EnhancedMessageMetadata {
+    return this.metadataManager.enrichMetadata(baseMetadata, enrichments);
+  }
+
+  setPartitioner(partitioner: Partitioner): void {
+    this.partitioner = partitioner;
+    logger.info('Partitioner updated', { partitioner: partitioner.getName() });
+  }
+
+  getPartitioner(): Partitioner | undefined {
+    return this.partitioner;
   }
 
   getConfiguration(): { compression?: CompressionTypes; batching: any; timeout: number } {
