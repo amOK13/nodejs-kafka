@@ -4,6 +4,15 @@ import { JsonMessageSchema } from '../common/messageValidator';
 import { CompressionTypes } from 'kafkajs';
 import * as readline from 'readline';
 
+// Utility function to get required environment variable
+function getRequiredEnvVar(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Required environment variable ${name} is not set`);
+  }
+  return value;
+}
+
 async function main(): Promise<void> {
   logger.info('Starting Enhanced Kafka Producer');
   logger.info(`Environment: ${process.env.NODE_ENV || 'undefined'}`);
@@ -21,22 +30,22 @@ async function main(): Promise<void> {
         type: CompressionTypes.Snappy
       },
       batching: {
-        maxBatchSize: parseInt(process.env.KAFKA_BATCH_SIZE || '8192'),
-        lingerMs: parseInt(process.env.KAFKA_LINGER_MS || '50'),
-        maxInFlightRequests: parseInt(process.env.KAFKA_MAX_IN_FLIGHT_REQUESTS || '5')
+        maxBatchSize: parseInt(getRequiredEnvVar('KAFKA_BATCH_SIZE')),
+        lingerMs: parseInt(getRequiredEnvVar('KAFKA_LINGER_MS')),
+        maxInFlightRequests: parseInt(getRequiredEnvVar('KAFKA_MAX_IN_FLIGHT_REQUESTS'))
       },
       retry: {
-        retries: parseInt(process.env.KAFKA_RETRIES || '5'),
-        initialRetryTime: parseInt(process.env.KAFKA_RETRY_INITIAL_TIME || '300'),
-        maxRetryTime: parseInt(process.env.KAFKA_RETRY_MAX_TIME || '30000')
+        retries: parseInt(getRequiredEnvVar('KAFKA_RETRIES')),
+        initialRetryTime: parseInt(getRequiredEnvVar('KAFKA_RETRY_INITIAL_TIME')),
+        maxRetryTime: parseInt(getRequiredEnvVar('KAFKA_RETRY_MAX_TIME'))
       },
       timeout: {
-        requestTimeoutMs: parseInt(process.env.KAFKA_REQUEST_TIMEOUT || '30000'),
+        requestTimeoutMs: parseInt(getRequiredEnvVar('KAFKA_REQUEST_TIMEOUT')),
         acks: 1
       },
       performance: {
         idempotent: true,
-        transactionTimeout: parseInt(process.env.KAFKA_TRANSACTION_TIMEOUT || '60000')
+        transactionTimeout: parseInt(getRequiredEnvVar('KAFKA_TRANSACTION_TIMEOUT'))
       }
     }
   });
@@ -79,43 +88,36 @@ async function interactiveMode(producer: MessageProducer): Promise<void> {
 
   const askForMessage = (): Promise<void> => {
     return new Promise(resolve => {
-      rl.question(
-        process.env.KAFKA_INTERACTIVE_PROMPT || 'Enter message (or press Enter for default): ',
-        async input => {
-          const messageText =
-            input.trim() ||
-            `${process.env.KAFKA_DEFAULT_MESSAGE || 'Hello Enhanced Kafka!'} - ${new Date().toISOString()}`;
+      rl.question(getRequiredEnvVar('KAFKA_INTERACTIVE_PROMPT'), async input => {
+        const messageText =
+          input.trim() || `${process.env.KAFKA_DEFAULT_MESSAGE} - ${new Date().toISOString()}`;
 
-          const messageObject = {
-            text: messageText,
-            timestamp: new Date().toISOString(),
-            source: process.env.KAFKA_PRODUCER_SOURCE || 'interactive-producer',
-            messageId: Math.random().toString(36).substr(2, 9)
-          };
+        const messageObject = {
+          text: messageText,
+          timestamp: new Date().toISOString(),
+          source: getRequiredEnvVar('KAFKA_PRODUCER_SOURCE'),
+          messageId: Math.random().toString(36).substr(2, 9)
+        };
 
-          try {
-            await producer.sendMessage(messageObject, `msg-${messageObject.messageId}`, {
-              'content-type': process.env.KAFKA_CONTENT_TYPE || 'application/json',
-              'producer-mode': process.env.KAFKA_PRODUCER_MODE || 'interactive'
-            });
-            logger.info(
-              process.env.KAFKA_SUCCESS_MESSAGE || 'Enhanced message sent successfully!',
-              {
-                messageId: messageObject.messageId
-              }
-            );
-          } catch (error) {
-            logger.error('Failed to send message:', error);
-          }
-
-          askForMessage().then(resolve);
+        try {
+          await producer.sendMessage(messageObject, `msg-${messageObject.messageId}`, {
+            'content-type': getRequiredEnvVar('KAFKA_CONTENT_TYPE'),
+            'producer-mode': getRequiredEnvVar('KAFKA_PRODUCER_MODE')
+          });
+          logger.info(getRequiredEnvVar('KAFKA_SUCCESS_MESSAGE'), {
+            messageId: messageObject.messageId
+          });
+        } catch (error) {
+          logger.error('Failed to send message:', error);
         }
-      );
+
+        askForMessage().then(resolve);
+      });
     });
   };
 
   rl.on('SIGINT', () => {
-    logger.info(`\n${process.env.KAFKA_EXIT_MESSAGE || 'Exiting interactive mode...'}`);
+    logger.info(`\n${getRequiredEnvVar('KAFKA_EXIT_MESSAGE')}`);
     rl.close();
     process.exit(0);
   });
