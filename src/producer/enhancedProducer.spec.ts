@@ -57,7 +57,6 @@ describe('Enhanced Producer Integration Tests (Step 4)', () => {
 
       await producer.initialize();
 
-      // Add routing rule
       const rule = createContentBasedRule(
         'user-type-rule',
         'Route by user type',
@@ -67,7 +66,6 @@ describe('Enhanced Producer Integration Tests (Step 4)', () => {
       );
       producer.addRoutingRule(rule);
 
-      // Send premium user message
       await producer.sendMessage(
         { user: { type: 'premium', id: 'user123' }, action: 'purchase' },
         'user123'
@@ -374,7 +372,6 @@ describe('Enhanced Producer Integration Tests (Step 4)', () => {
 
       await producer.initialize();
 
-      // Add routing rule
       const rule = createContentBasedRule(
         'priority-rule',
         'High Priority Messages',
@@ -383,8 +380,6 @@ describe('Enhanced Producer Integration Tests (Step 4)', () => {
         'priority-topic'
       );
       producer.addRoutingRule(rule);
-
-      // Send message that matches routing rule
       await producer.sendMessage(
         { priority: 'high', message: 'High priority message' },
         'msg-key',
@@ -406,7 +401,6 @@ describe('Enhanced Producer Integration Tests (Step 4)', () => {
                 'x-msg-version': Buffer.from('1.0.0'),
                 'x-msg-userId': Buffer.from('user123'),
                 'x-msg-priority': Buffer.from('9')
-                // Also includes automatic metadata like x-msg-timestamp, x-msg-messageId, x-msg-correlationId
               }),
               timestamp: expect.any(String)
             })

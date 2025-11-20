@@ -21,22 +21,22 @@ async function main(): Promise<void> {
         type: CompressionTypes.Snappy
       },
       batching: {
-        maxBatchSize: 8192,
-        lingerMs: 50,
-        maxInFlightRequests: 5
+        maxBatchSize: parseInt(process.env.KAFKA_BATCH_SIZE || '8192'),
+        lingerMs: parseInt(process.env.KAFKA_LINGER_MS || '50'),
+        maxInFlightRequests: parseInt(process.env.KAFKA_MAX_IN_FLIGHT_REQUESTS || '5')
       },
       retry: {
-        retries: 5,
-        initialRetryTime: 300,
-        maxRetryTime: 30000
+        retries: parseInt(process.env.KAFKA_RETRIES || '5'),
+        initialRetryTime: parseInt(process.env.KAFKA_RETRY_INITIAL_TIME || '300'),
+        maxRetryTime: parseInt(process.env.KAFKA_RETRY_MAX_TIME || '30000')
       },
       timeout: {
-        requestTimeoutMs: 30000,
+        requestTimeoutMs: parseInt(process.env.KAFKA_REQUEST_TIMEOUT || '30000'),
         acks: 1
       },
       performance: {
         idempotent: true,
-        transactionTimeout: 60000
+        transactionTimeout: parseInt(process.env.KAFKA_TRANSACTION_TIMEOUT || '60000')
       }
     }
   });
@@ -79,35 +79,43 @@ async function interactiveMode(producer: MessageProducer): Promise<void> {
 
   const askForMessage = (): Promise<void> => {
     return new Promise(resolve => {
-      rl.question('Enter message (or press Enter for default): ', async input => {
-        const messageText = input.trim() || `Hello Enhanced Kafka! - ${new Date().toISOString()}`;
+      rl.question(
+        process.env.KAFKA_INTERACTIVE_PROMPT || 'Enter message (or press Enter for default): ',
+        async input => {
+          const messageText =
+            input.trim() ||
+            `${process.env.KAFKA_DEFAULT_MESSAGE || 'Hello Enhanced Kafka!'} - ${new Date().toISOString()}`;
 
-        const messageObject = {
-          text: messageText,
-          timestamp: new Date().toISOString(),
-          source: 'interactive-producer',
-          messageId: Math.random().toString(36).substr(2, 9)
-        };
+          const messageObject = {
+            text: messageText,
+            timestamp: new Date().toISOString(),
+            source: process.env.KAFKA_PRODUCER_SOURCE || 'interactive-producer',
+            messageId: Math.random().toString(36).substr(2, 9)
+          };
 
-        try {
-          await producer.sendMessage(messageObject, `msg-${messageObject.messageId}`, {
-            'content-type': 'application/json',
-            'producer-mode': 'interactive'
-          });
-          logger.info('Enhanced message sent successfully!', {
-            messageId: messageObject.messageId
-          });
-        } catch (error) {
-          logger.error('Failed to send message:', error);
+          try {
+            await producer.sendMessage(messageObject, `msg-${messageObject.messageId}`, {
+              'content-type': process.env.KAFKA_CONTENT_TYPE || 'application/json',
+              'producer-mode': process.env.KAFKA_PRODUCER_MODE || 'interactive'
+            });
+            logger.info(
+              process.env.KAFKA_SUCCESS_MESSAGE || 'Enhanced message sent successfully!',
+              {
+                messageId: messageObject.messageId
+              }
+            );
+          } catch (error) {
+            logger.error('Failed to send message:', error);
+          }
+
+          askForMessage().then(resolve);
         }
-
-        askForMessage().then(resolve);
-      });
+      );
     });
   };
 
   rl.on('SIGINT', () => {
-    logger.info('\nExiting interactive mode...');
+    logger.info(`\n${process.env.KAFKA_EXIT_MESSAGE || 'Exiting interactive mode...'}`);
     rl.close();
     process.exit(0);
   });

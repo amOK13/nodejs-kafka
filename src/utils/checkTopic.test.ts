@@ -2,7 +2,6 @@ import { checkTopic } from './checkTopic';
 import { createKafka } from '../common/kafkaClient';
 import { logger } from '../common/logger';
 
-// Mock dependencies
 jest.mock('../common/kafkaClient');
 jest.mock('../common/logger');
 jest.mock('../common/config', () => ({
@@ -143,7 +142,6 @@ describe('CheckTopic Utility', () => {
 
       expect(mockConsumer.run).toHaveBeenCalled();
 
-      // Verify the eachMessage callback is a function
       const runCall = mockConsumer.run.mock.calls[0][0];
       expect(typeof runCall.eachMessage).toBe('function');
     });

@@ -15,18 +15,15 @@ async function checkTopic(topicName?: string): Promise<void> {
   const consumer = kafka.consumer({ groupId: `check-topic-${Date.now()}` });
 
   try {
-    // Connect admin and consumer
     await admin.connect();
     await consumer.connect();
 
-    // Check if topic exists
     const topics = await admin.listTopics();
     if (!topics.includes(targetTopic)) {
       logger.info(`Topic '${targetTopic}' does not exist`);
       return;
     }
 
-    // Get topic metadata
     const metadata = await admin.fetchTopicMetadata({ topics: [targetTopic] });
     const topicMetadata = metadata.topics.find(t => t.name === targetTopic);
 
@@ -38,12 +35,11 @@ async function checkTopic(topicName?: string): Promise<void> {
     logger.info(`Topic '${targetTopic}' info:`);
     logger.info(`- Partitions: ${topicMetadata.partitions.length}`);
 
-    // Simple method: try to consume a few messages to see if there are any
     await consumer.subscribe({ topic: targetTopic, fromBeginning: true });
 
     let messageCount = 0;
     const startTime = Date.now();
-    const timeoutMs = 3000; // 3 seconds timeout
+    const timeoutMs = 3000;
 
     logger.info('Counting messages...');
 
@@ -56,7 +52,6 @@ async function checkTopic(topicName?: string): Promise<void> {
       }
     });
 
-    // Wait for either timeout or to finish consuming
     await new Promise(resolve => {
       const checkInterval = setInterval(() => {
         if (Date.now() - startTime > timeoutMs) {
@@ -65,7 +60,6 @@ async function checkTopic(topicName?: string): Promise<void> {
         }
       }, 100);
 
-      // Also resolve if consumer stops naturally (no more messages)
       setTimeout(() => {
         clearInterval(checkInterval);
         resolve(undefined);
@@ -87,7 +81,6 @@ async function checkTopic(topicName?: string): Promise<void> {
   }
 }
 
-// CLI interface
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const topicName = args[0];

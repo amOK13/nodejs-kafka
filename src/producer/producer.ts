@@ -149,10 +149,8 @@ export class MessageProducer {
         });
       }
 
-      // Determine partition if partitioner is configured
       let partition: number | undefined;
       if (this.partitioner) {
-        // Get actual partition count from topic metadata if available
         const partitionCount = (await this.getTopicPartitionCount(targetTopic)) || 3;
         partition = this.partitioner.partition({
           topic: targetTopic,
@@ -193,8 +191,6 @@ export class MessageProducer {
   ): Promise<void> {
     try {
       const kafkaMessages = [];
-
-      // Get partition count once for the batch
       const partitionCount = this.partitioner
         ? (await this.getTopicPartitionCount(config.kafkaTopic)) || 3
         : undefined;
@@ -224,7 +220,6 @@ export class MessageProducer {
           });
         }
 
-        // Determine partition for this message
         let partition: number | undefined;
         if (this.partitioner && partitionCount) {
           const enhancedMetadata = this.metadataManager.createMetadata(

@@ -179,7 +179,7 @@ describe('Partitioners', () => {
 
       const partition = partitioner.partition(context);
 
-      expect(partition).toBe(2); // Clamped to partitionCount - 1
+      expect(partition).toBe(2);
     });
 
     test('should handle negative values', () => {
@@ -210,7 +210,7 @@ describe('Partitioners', () => {
     });
 
     test('should distribute according to weights', () => {
-      const partitioner = new WeightedPartitioner([1, 9]); // 10% vs 90%
+      const partitioner = new WeightedPartitioner([1, 9]);
       const context = createContext({ partitionCount: 2 });
 
       const partitions = { 0: 0, 1: 0 };
@@ -221,9 +221,8 @@ describe('Partitioners', () => {
         partitions[partition as keyof typeof partitions]++;
       }
 
-      // Partition 1 should have roughly 9x more assignments than partition 0
       const ratio = partitions[1] / partitions[0];
-      expect(ratio).toBeGreaterThan(5); // Allow some variance
+      expect(ratio).toBeGreaterThan(5);
       expect(ratio).toBeLessThan(15);
     });
 
@@ -231,7 +230,6 @@ describe('Partitioners', () => {
       const partitioner = new WeightedPartitioner([1, 2, 3, 4, 5]);
       const context = createContext({ partitionCount: 3 });
 
-      // Should only return partitions 0, 1, or 2
       for (let i = 0; i < 100; i++) {
         const partition = partitioner.partition(context);
         expect(partition).toBeGreaterThanOrEqual(0);

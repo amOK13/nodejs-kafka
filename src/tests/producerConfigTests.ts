@@ -203,7 +203,7 @@ export class ProducerConfigTests {
 
       logger.info(' All Producer Configuration Tests Passed!');
     } catch (error) {
-      logger.error('❌ Test failed', { error });
+      logger.error('Test failed', { error });
       throw error;
     }
   }

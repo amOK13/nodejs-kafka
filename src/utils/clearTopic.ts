@@ -21,18 +21,15 @@ async function clearTopic(topicName?: string): Promise<void> {
   const consumer = kafka.consumer({ groupId: `clear-topic-${Date.now()}` });
 
   try {
-    // Connect admin and consumer
     await admin.connect();
     await consumer.connect();
 
-    // Check if topic exists
     const topics = await admin.listTopics();
     if (!topics.includes(targetTopic)) {
       logger.info(`Topic '${targetTopic}' does not exist`);
       return;
     }
 
-    // Get topic metadata to know partition count
     const metadata = await admin.fetchTopicMetadata({ topics: [targetTopic] });
     const partitions = metadata.topics[0]?.partitions || [];
 
@@ -43,12 +40,11 @@ async function clearTopic(topicName?: string): Promise<void> {
 
     logger.info(`Topic '${targetTopic}' has ${partitions.length} partitions`);
 
-    // Subscribe to the topic
     await consumer.subscribe({ topic: targetTopic, fromBeginning: true });
 
     let totalMessagesCleared = 0;
     let lastMessageTime = Date.now();
-    const timeoutMs = 5000; // Wait 5 seconds after last message
+    const timeoutMs = 5000;
 
     logger.info('Starting to consume messages...');
 
@@ -63,7 +59,6 @@ async function clearTopic(topicName?: string): Promise<void> {
       }
     });
 
-    // Wait until no more messages are being consumed
     while (Date.now() - lastMessageTime < timeoutMs) {
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
@@ -103,18 +98,15 @@ async function resetTopic(
   try {
     await admin.connect();
 
-    // Check if topic exists
     const topics = await admin.listTopics();
 
     if (topics.includes(targetTopic)) {
       logger.info(`Deleting existing topic: ${targetTopic}`);
       await admin.deleteTopics({ topics: [targetTopic] });
 
-      // Wait a bit for deletion to complete
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
-    // Create new topic
     logger.info(`Creating new topic: ${targetTopic} with ${partitions} partitions`);
     await admin.createTopics({
       topics: [
@@ -124,7 +116,7 @@ async function resetTopic(
           replicationFactor,
           configEntries: [
             { name: 'cleanup.policy', value: 'delete' },
-            { name: 'retention.ms', value: '86400000' } // 24 hours
+            { name: 'retention.ms', value: '86400000' }
           ]
         }
       ]
@@ -139,7 +131,6 @@ async function resetTopic(
   }
 }
 
-// CLI interface
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const command = args[0];

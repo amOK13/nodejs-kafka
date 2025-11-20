@@ -5,7 +5,6 @@ import {
 } from './transactionManager';
 import { Producer, Transaction } from 'kafkajs';
 
-// Mock KafkaJS Producer
 const mockTransaction = {
   commit: jest.fn(),
   abort: jest.fn(),
@@ -258,7 +257,6 @@ describe('TransactionManager', () => {
     });
 
     test('should handle commit failure', async () => {
-      // Reset the mock to allow transaction creation
       mockProducer.transaction = jest.fn().mockResolvedValue(mockTransaction);
       await transactionManager.beginTransaction();
       mockTransaction.commit.mockRejectedValueOnce(new Error('Commit failed'));
@@ -268,7 +266,6 @@ describe('TransactionManager', () => {
     });
 
     test('should handle send failure in transaction', async () => {
-      // Reset the mock to allow transaction creation
       mockProducer.transaction = jest.fn().mockResolvedValue(mockTransaction);
       await transactionManager.beginTransaction();
       (mockProducer.send as jest.Mock).mockRejectedValueOnce(new Error('Send failed'));

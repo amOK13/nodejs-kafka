@@ -2,7 +2,6 @@ import { clearTopic, resetTopic } from './clearTopic';
 import { createKafka } from '../common/kafkaClient';
 import { logger } from '../common/logger';
 
-// Mock dependencies
 jest.mock('../common/kafkaClient');
 jest.mock('../common/logger');
 jest.mock('../common/config', () => ({
@@ -57,11 +56,9 @@ describe('ClearTopic Utility', () => {
     });
 
     test('should clear messages from default topic successfully', async () => {
-      // Mock consumer run to simulate message processing
       let messageCallback: any;
       mockConsumer.run.mockImplementation((config: any) => {
         messageCallback = config.eachMessage;
-        // Simulate processing some messages then stopping
         setTimeout(async () => {
           await messageCallback({ partition: 0, message: {} });
           await messageCallback({ partition: 0, message: {} });
@@ -285,7 +282,7 @@ describe('ClearTopic Utility', () => {
       await resetTopic();
 
       const endTime = Date.now();
-      expect(endTime - startTime).toBeGreaterThanOrEqual(2000); // Should wait at least 2 seconds
+      expect(endTime - startTime).toBeGreaterThanOrEqual(2000);
     });
   });
 
@@ -330,7 +327,6 @@ describe('ClearTopic Utility', () => {
       let messageCallback: any;
       mockConsumer.run.mockImplementation((config: any) => {
         messageCallback = config.eachMessage;
-        // Simulate processing 250 messages
         setTimeout(async () => {
           for (let i = 1; i <= 250; i++) {
             await messageCallback({ partition: 0, message: {} });
