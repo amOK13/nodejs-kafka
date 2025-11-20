@@ -1,4 +1,9 @@
-import { MessageSerializer, MessageSerializerFactory, StringSerializer, JsonSerializer } from './messageSerializer';
+import {
+  MessageSerializer,
+  MessageSerializerFactory,
+  StringSerializer,
+  JsonSerializer
+} from './messageSerializer';
 
 describe('MessageSerializer', () => {
   describe('StringSerializer', () => {
@@ -106,7 +111,9 @@ describe('MessageSerializer', () => {
     });
 
     test('should throw error for unsupported format', () => {
-      expect(() => MessageSerializerFactory.create('xml' as any)).toThrow('Unsupported serialization format: xml');
+      expect(() => MessageSerializerFactory.create('xml' as any)).toThrow(
+        'Unsupported serialization format: xml'
+      );
     });
   });
 });

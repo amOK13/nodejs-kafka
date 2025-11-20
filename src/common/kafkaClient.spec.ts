@@ -164,7 +164,10 @@ describe('KafkaClient', () => {
       await createConsumer();
 
       const { logger } = require('./logger');
-      expect(logger.info).toHaveBeenCalledWith('Consumer connected successfully', expect.any(Object));
+      expect(logger.info).toHaveBeenCalledWith(
+        'Consumer connected successfully',
+        expect.any(Object)
+      );
     });
 
     test('should log producer connection errors', async () => {
@@ -174,7 +177,10 @@ describe('KafkaClient', () => {
       await expect(createProducer()).rejects.toThrow();
 
       const { logger } = require('./logger');
-      expect(logger.error).toHaveBeenCalledWith('Failed to create and connect producer', expect.any(Object));
+      expect(logger.error).toHaveBeenCalledWith(
+        'Failed to create and connect producer',
+        expect.any(Object)
+      );
     });
 
     test('should log consumer connection errors', async () => {
@@ -184,7 +190,10 @@ describe('KafkaClient', () => {
       await expect(createConsumer()).rejects.toThrow();
 
       const { logger } = require('./logger');
-      expect(logger.error).toHaveBeenCalledWith('Failed to create and connect consumer', expect.any(Object));
+      expect(logger.error).toHaveBeenCalledWith(
+        'Failed to create and connect consumer',
+        expect.any(Object)
+      );
     });
   });
 });

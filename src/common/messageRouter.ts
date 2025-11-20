@@ -101,7 +101,7 @@ export const createContentBasedRule = (
   return {
     id,
     name,
-    condition: (message) => {
+    condition: message => {
       const pathParts = contentPath.split('.');
       let current = message;
 
@@ -149,7 +149,7 @@ export const createPatternBasedRule = (
   return {
     id,
     name,
-    condition: (message) => {
+    condition: message => {
       const pathParts = contentPath.split('.');
       let current = message;
 

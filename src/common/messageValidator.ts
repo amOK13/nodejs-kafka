@@ -32,7 +32,10 @@ export class JsonMessageSchema implements MessageSchema {
       }
       return { isValid: true };
     } catch (error) {
-      return { isValid: false, error: `Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}` };
+      return {
+        isValid: false,
+        error: `Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
     }
   }
 }

@@ -3,11 +3,23 @@ import { createKafka } from '../common/kafkaClient';
 import { config } from '../common/config';
 import { logger } from '../common/logger';
 import { MessageValidator, MessageSchema } from '../common/messageValidator';
-import { MessageSerializer, MessageSerializerFactory, SerializationFormat } from '../common/messageSerializer';
-import { EnhancedProducerConfig, ProducerConfigBuilder, ProducerPresets } from '../common/producerConfig';
+import {
+  MessageSerializer,
+  MessageSerializerFactory,
+  SerializationFormat
+} from '../common/messageSerializer';
+import {
+  EnhancedProducerConfig,
+  ProducerConfigBuilder,
+  ProducerPresets
+} from '../common/producerConfig';
 import { MessageRouter, RoutingRule, MessageMetadata } from '../common/messageRouter';
 import { Partitioner, PartitionerFactory } from '../common/partitioners';
-import { TransactionManager, TransactionMessage, TransactionOptions } from '../common/transactionManager';
+import {
+  TransactionManager,
+  TransactionMessage,
+  TransactionOptions
+} from '../common/transactionManager';
 import { MetadataManager, EnhancedMessageMetadata } from '../common/metadataManager';
 
 export interface ProducerOptions {
@@ -69,7 +81,10 @@ export class MessageProducer {
     await this.producer.connect();
 
     if (this.options.enableTransactions) {
-      this.transactionManager = new TransactionManager(this.producer, this.options.transactionOptions);
+      this.transactionManager = new TransactionManager(
+        this.producer,
+        this.options.transactionOptions
+      );
     }
 
     logger.info('Enhanced producer initialized', {
@@ -96,7 +111,9 @@ export class MessageProducer {
       if (this.enableValidation) {
         const validationResult = this.validator.validate(message);
         if (!validationResult.isValid) {
-          const error = new Error(`Message validation failed: ${validationResult.error || 'Unknown validation error'}`);
+          const error = new Error(
+            `Message validation failed: ${validationResult.error || 'Unknown validation error'}`
+          );
           logger.error('Message validation failed', {
             topic: config.kafkaTopic,
             message,
@@ -132,11 +149,14 @@ export class MessageProducer {
         });
       }
 
+      // Determine partition if partitioner is configured
       let partition: number | undefined;
       if (this.partitioner) {
+        // Get actual partition count from topic metadata if available
+        const partitionCount = (await this.getTopicPartitionCount(targetTopic)) || 3;
         partition = this.partitioner.partition({
           topic: targetTopic,
-          partitionCount: 3,
+          partitionCount,
           message,
           key,
           metadata: enhancedMetadata
@@ -145,13 +165,11 @@ export class MessageProducer {
 
       await this.producer.send({
         topic: targetTopic,
-        compression: this.compressionType,
-        timeout: this.timeoutMs,
         messages: [
           {
             partition,
             key: key ? Buffer.from(key) : undefined,
-            value: serializedMessage,
+            value: Buffer.from(serializedMessage),
             headers: Object.keys(kafkaHeaders).length > 0 ? kafkaHeaders : undefined,
             timestamp: Date.now().toString()
           }
@@ -170,9 +188,17 @@ export class MessageProducer {
     }
   }
 
-  async sendBatch(messages: Array<{ message: any; key?: string; headers?: Record<string, string> }>): Promise<void> {
+  async sendBatch(
+    messages: Array<{ message: any; key?: string; headers?: Record<string, string> }>
+  ): Promise<void> {
     try {
       const kafkaMessages = [];
+
+      // Get partition count once for the batch
+      const partitionCount = this.partitioner
+        ? (await this.getTopicPartitionCount(config.kafkaTopic)) || 3
+        : undefined;
+
       for (const { message, key, headers } of messages) {
         if (this.enableValidation) {
           const validationResult = this.validator.validate(message);
@@ -198,7 +224,23 @@ export class MessageProducer {
           });
         }
 
+        // Determine partition for this message
+        let partition: number | undefined;
+        if (this.partitioner && partitionCount) {
+          const enhancedMetadata = this.metadataManager.createMetadata(
+            this.options.defaultMetadata || {}
+          );
+          partition = this.partitioner.partition({
+            topic: config.kafkaTopic,
+            partitionCount,
+            message,
+            key,
+            metadata: enhancedMetadata
+          });
+        }
+
         kafkaMessages.push({
+          partition,
           key: key ? Buffer.from(key) : undefined,
           value: serializedMessage,
           headers: Object.keys(kafkaHeaders).length > 0 ? kafkaHeaders : undefined,
@@ -225,7 +267,11 @@ export class MessageProducer {
         messageCount: messages.length
       });
     } catch (error) {
-      logger.error('Failed to send batch messages', { topic: config.kafkaTopic, messageCount: messages.length, error });
+      logger.error('Failed to send batch messages', {
+        topic: config.kafkaTopic,
+        messageCount: messages.length,
+        error
+      });
       throw error;
     }
   }
@@ -328,6 +374,24 @@ export class MessageProducer {
       chunks.push(messages.slice(i, i + chunkSize));
     }
     return chunks;
+  }
+
+  private async getTopicPartitionCount(topic: string): Promise<number | undefined> {
+    try {
+      const kafka = createKafka();
+      const admin = kafka.admin();
+      await admin.connect();
+
+      const metadata = await admin.fetchTopicMetadata({ topics: [topic] });
+      const topicMetadata = metadata.topics.find(t => t.name === topic);
+
+      await admin.disconnect();
+
+      return topicMetadata?.partitions.length;
+    } catch (error) {
+      logger.error('Failed to fetch topic partition count', { topic, error });
+      return undefined;
+    }
   }
 
   async disconnect(): Promise<void> {

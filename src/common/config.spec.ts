@@ -93,7 +93,12 @@ describe('Config', () => {
   });
 
   test('should validate config structure', () => {
-    const requiredProperties = ['kafkaBrokers', 'kafkaTopic', 'kafkaClientId', 'kafkaConsumerGroupId'];
+    const requiredProperties = [
+      'kafkaBrokers',
+      'kafkaTopic',
+      'kafkaClientId',
+      'kafkaConsumerGroupId'
+    ];
 
     requiredProperties.forEach(prop => {
       expect(config).toHaveProperty(prop);

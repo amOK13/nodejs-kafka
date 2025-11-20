@@ -110,13 +110,21 @@ export class ProducerConfigBuilder {
     return this;
   }
 
-  withBatching(maxBatchSize?: number, lingerMs?: number, maxInFlightRequests?: number): ProducerConfigBuilder {
+  withBatching(
+    maxBatchSize?: number,
+    lingerMs?: number,
+    maxInFlightRequests?: number
+  ): ProducerConfigBuilder {
     this.enhancedConfig.batching = { maxBatchSize, lingerMs, maxInFlightRequests };
     this.buildBaseConfig();
     return this;
   }
 
-  withRetries(retries?: number, initialRetryTime?: number, maxRetryTime?: number): ProducerConfigBuilder {
+  withRetries(
+    retries?: number,
+    initialRetryTime?: number,
+    maxRetryTime?: number
+  ): ProducerConfigBuilder {
     this.enhancedConfig.retry = {
       ...this.enhancedConfig.retry,
       retries,

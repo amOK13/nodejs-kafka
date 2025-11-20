@@ -125,10 +125,7 @@ describe('MessageProducer', () => {
       await producer.sendMessage(message);
 
       expect(mockProducer.send).toHaveBeenCalledTimes(1);
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Message sent successfully',
-        expect.any(Object)
-      );
+      expect(mockLogger.info).toHaveBeenCalledWith('Message sent successfully', expect.any(Object));
     });
 
     test('should send message with key and headers', async () => {
@@ -159,13 +156,12 @@ describe('MessageProducer', () => {
 
       const invalidMessage = { not: 'a string' };
 
-      await expect(producer.sendMessage(invalidMessage)).rejects.toThrow('Message validation failed');
+      await expect(producer.sendMessage(invalidMessage)).rejects.toThrow(
+        'Message validation failed'
+      );
       expect(mockProducer.send).not.toHaveBeenCalled();
       const { logger } = require('../common/logger');
-      expect(logger.error).toHaveBeenCalledWith(
-        'Message validation failed',
-        expect.any(Object)
-      );
+      expect(logger.error).toHaveBeenCalledWith('Message validation failed', expect.any(Object));
     });
 
     test('should send invalid message when validation is disabled', async () => {
@@ -187,10 +183,7 @@ describe('MessageProducer', () => {
       mockProducer.send.mockRejectedValue(new Error('Send failed'));
 
       await expect(producer.sendMessage(message)).rejects.toThrow('Send failed');
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        'Failed to send message',
-        expect.any(Object)
-      );
+      expect(mockLogger.error).toHaveBeenCalledWith('Failed to send message', expect.any(Object));
     });
   });
 
@@ -241,10 +234,7 @@ describe('MessageProducer', () => {
     });
 
     test('should handle batch send errors', async () => {
-      const messages = [
-        { message: { text: 'Message 1' } },
-        { message: { text: 'Message 2' } }
-      ];
+      const messages = [{ message: { text: 'Message 1' } }, { message: { text: 'Message 2' } }];
 
       mockProducer.send.mockRejectedValue(new Error('Batch send failed'));
 
@@ -273,16 +263,14 @@ describe('MessageProducer', () => {
 
     test('should enable/disable validation', () => {
       producer.setValidationEnabled(false);
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Producer validation status changed',
-        { enabled: false }
-      );
+      expect(mockLogger.info).toHaveBeenCalledWith('Producer validation status changed', {
+        enabled: false
+      });
 
       producer.setValidationEnabled(true);
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Producer validation status changed',
-        { enabled: true }
-      );
+      expect(mockLogger.info).toHaveBeenCalledWith('Producer validation status changed', {
+        enabled: true
+      });
     });
 
     test('should update configuration', () => {
@@ -293,10 +281,9 @@ describe('MessageProducer', () => {
 
       producer.updateConfiguration(newConfig);
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Producer configuration updated',
-        { config: newConfig }
-      );
+      expect(mockLogger.info).toHaveBeenCalledWith('Producer configuration updated', {
+        config: newConfig
+      });
     });
 
     test('should get current configuration', () => {
@@ -339,11 +326,7 @@ describe('MessageProducer', () => {
       const messages = [1, 2, 3, 4, 5, 6, 7];
       const chunks = chunkMessages(messages, 3);
 
-      expect(chunks).toEqual([
-        [1, 2, 3],
-        [4, 5, 6],
-        [7]
-      ]);
+      expect(chunks).toEqual([[1, 2, 3], [4, 5, 6], [7]]);
     });
 
     test('should handle empty array', () => {

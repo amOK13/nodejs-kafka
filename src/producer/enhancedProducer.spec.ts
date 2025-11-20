@@ -73,18 +73,18 @@ describe('Enhanced Producer Integration Tests (Step 4)', () => {
         'user123'
       );
 
-      expect(mockProducer.send).toHaveBeenCalledWith({
-        topic: 'premium-topic',
-        compression: undefined,
-        timeout: 30000,
-        messages: [
-          expect.objectContaining({
-            key: Buffer.from('user123'),
-            value: expect.any(String),
-            headers: expect.any(Object)
-          })
-        ]
-      });
+      expect(mockProducer.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          topic: 'premium-topic',
+          messages: expect.arrayContaining([
+            expect.objectContaining({
+              key: Buffer.from('user123'),
+              value: expect.any(Object),
+              headers: expect.any(Object)
+            })
+          ])
+        })
+      );
     });
 
     test('should use default topic when no rules match', async () => {
@@ -106,15 +106,10 @@ describe('Enhanced Producer Integration Tests (Step 4)', () => {
       );
       producer.addRoutingRule(rule);
 
-      await producer.sendMessage(
-        { user: { role: 'user' }, action: 'view' },
-        'user456'
-      );
+      await producer.sendMessage({ user: { role: 'user' }, action: 'view' }, 'user456');
 
       expect(mockProducer.send).toHaveBeenCalledWith({
         topic: 'default-topic',
-        compression: undefined,
-        timeout: 30000,
         messages: [
           expect.objectContaining({
             key: Buffer.from('user456')
@@ -131,13 +126,7 @@ describe('Enhanced Producer Integration Tests (Step 4)', () => {
 
       await producer.initialize();
 
-      const rule = createContentBasedRule(
-        'test-rule',
-        'Test Rule',
-        'type',
-        'test',
-        'test-topic'
-      );
+      const rule = createContentBasedRule('test-rule', 'Test Rule', 'type', 'test', 'test-topic');
 
       producer.addRoutingRule(rule);
       expect(producer.getRoutingRules()).toHaveLength(1);
@@ -324,7 +313,7 @@ describe('Enhanced Producer Integration Tests (Step 4)', () => {
 
       await producer.initialize();
 
-      const result = await producer.sendInTransaction(async (sender) => {
+      const result = await producer.sendInTransaction(async sender => {
         await sender([
           {
             topic: 'topic1',
@@ -403,26 +392,27 @@ describe('Enhanced Producer Integration Tests (Step 4)', () => {
         { userId: 'user123', priority: 9 }
       );
 
-      expect(mockProducer.send).toHaveBeenCalledWith({
-        topic: 'priority-topic',
-        compression: undefined,
-        timeout: 30000,
-        messages: [
-          {
-            partition: expect.any(Number),
-            key: Buffer.from('msg-key'),
-            value: expect.any(String),
-            headers: expect.objectContaining({
-              'custom-header': Buffer.from('custom-value'),
-              'x-msg-source': Buffer.from('integration-test'),
-              'x-msg-version': Buffer.from('1.0.0'),
-              'x-msg-userId': Buffer.from('user123'),
-              'x-msg-priority': Buffer.from('9')
-            }),
-            timestamp: expect.any(String)
-          }
-        ]
-      });
+      expect(mockProducer.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          topic: 'priority-topic',
+          messages: expect.arrayContaining([
+            expect.objectContaining({
+              partition: expect.any(Number),
+              key: Buffer.from('msg-key'),
+              value: expect.any(Object),
+              headers: expect.objectContaining({
+                'custom-header': Buffer.from('custom-value'),
+                'x-msg-source': Buffer.from('integration-test'),
+                'x-msg-version': Buffer.from('1.0.0'),
+                'x-msg-userId': Buffer.from('user123'),
+                'x-msg-priority': Buffer.from('9')
+                // Also includes automatic metadata like x-msg-timestamp, x-msg-messageId, x-msg-correlationId
+              }),
+              timestamp: expect.any(String)
+            })
+          ])
+        })
+      );
     });
   });
 

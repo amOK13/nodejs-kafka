@@ -215,23 +215,25 @@ export class MetadataManager {
     value: string
   ): void {
     switch (key) {
-    case 'timestamp':
-      metadata[key] = new Date(value);
-      break;
-    case 'priority':
-    case 'ttl':
-    case 'retryCount':
-      metadata[key] = parseInt(value, 10);
-      break;
-    case 'traceContext':
-      metadata[key] = JSON.parse(value);
-      break;
-    default:
-      (metadata as any)[key] = value;
+      case 'timestamp':
+        metadata[key] = new Date(value);
+        break;
+      case 'priority':
+      case 'ttl':
+      case 'retryCount':
+        metadata[key] = parseInt(value, 10);
+        break;
+      case 'traceContext':
+        metadata[key] = JSON.parse(value);
+        break;
+      default:
+        (metadata as any)[key] = value;
     }
   }
 }
 
-export const createMetadataManager = (defaultMetadata?: Partial<EnhancedMessageMetadata>): MetadataManager => {
+export const createMetadataManager = (
+  defaultMetadata?: Partial<EnhancedMessageMetadata>
+): MetadataManager => {
   return new MetadataManager(defaultMetadata);
 };

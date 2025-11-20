@@ -29,7 +29,7 @@ export class HashPartitioner implements Partitioner {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash;
     }
     return hash;
@@ -91,7 +91,7 @@ export class ContentBasedPartitioner implements Partitioner {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash;
     }
     return hash;
@@ -167,11 +167,17 @@ export const PartitionerFactory = {
     return new RoundRobinPartitioner();
   },
 
-  createContentBased(contentPath: string, hashFunction?: (value: any) => number): ContentBasedPartitioner {
+  createContentBased(
+    contentPath: string,
+    hashFunction?: (value: any) => number
+  ): ContentBasedPartitioner {
     return new ContentBasedPartitioner(contentPath, hashFunction);
   },
 
-  createCustom(name: string, partitionFunction: (context: PartitionerContext) => number): CustomPartitioner {
+  createCustom(
+    name: string,
+    partitionFunction: (context: PartitionerContext) => number
+  ): CustomPartitioner {
     return new CustomPartitioner(name, partitionFunction);
   },
 

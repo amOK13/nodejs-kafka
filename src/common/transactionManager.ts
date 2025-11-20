@@ -53,7 +53,9 @@ export class TransactionManager {
       return txnId;
     } catch (error) {
       logger.error('Failed to start transaction', { transactionId: txnId, error });
-      throw new Error(`Failed to start transaction: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to start transaction: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -221,6 +223,9 @@ export class TransactionManager {
   }
 }
 
-export const createTransactionManager = (producer: Producer, options?: TransactionOptions): TransactionManager => {
+export const createTransactionManager = (
+  producer: Producer,
+  options?: TransactionOptions
+): TransactionManager => {
   return new TransactionManager(producer, options);
 };

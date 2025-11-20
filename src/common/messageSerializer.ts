@@ -33,7 +33,9 @@ export class JsonSerializer implements MessageSerializer {
         data,
         error: error instanceof Error ? error.message : error
       });
-      throw new Error(`Serialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Serialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -45,7 +47,9 @@ export class JsonSerializer implements MessageSerializer {
         data,
         error: error instanceof Error ? error.message : error
       });
-      throw new Error(`Deserialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Deserialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 }
@@ -53,12 +57,12 @@ export class JsonSerializer implements MessageSerializer {
 export class MessageSerializerFactory {
   static create(format: SerializationFormat): MessageSerializer {
     switch (format) {
-    case 'string':
-      return new StringSerializer();
-    case 'json':
-      return new JsonSerializer();
-    default:
-      throw new Error(`Unsupported serialization format: ${format}`);
+      case 'string':
+        return new StringSerializer();
+      case 'json':
+        return new JsonSerializer();
+      default:
+        throw new Error(`Unsupported serialization format: ${format}`);
     }
   }
 }

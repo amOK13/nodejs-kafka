@@ -4,7 +4,6 @@ import { logger } from '../common/logger';
 import { CompressionTypes } from 'kafkajs';
 
 export class ProducerConfigTests {
-
   static async testHighThroughputConfiguration(): Promise<void> {
     const producer = new MessageProducer({
       preset: 'highThroughput',
@@ -17,8 +16,14 @@ export class ProducerConfigTests {
       await producer.initialize();
 
       const config = producer.getConfiguration();
-      console.assert(config.compression === CompressionTypes.GZIP, 'High throughput should use GZIP compression');
-      console.assert(config.batching.maxBatchSize === 16384, 'High throughput should have large batch size');
+      console.assert(
+        config.compression === CompressionTypes.GZIP,
+        'High throughput should use GZIP compression'
+      );
+      console.assert(
+        config.batching.maxBatchSize === 16384,
+        'High throughput should have large batch size'
+      );
 
       logger.info('High throughput producer configured successfully');
     } finally {
@@ -38,7 +43,10 @@ export class ProducerConfigTests {
       await producer.initialize();
 
       const config = producer.getConfiguration();
-      console.assert(config.compression === CompressionTypes.LZ4, 'Low latency should use LZ4 compression');
+      console.assert(
+        config.compression === CompressionTypes.LZ4,
+        'Low latency should use LZ4 compression'
+      );
       console.assert(config.batching.lingerMs === 5, 'Low latency should have short linger time');
 
       logger.info('Low latency producer configured successfully');
@@ -59,7 +67,10 @@ export class ProducerConfigTests {
       await producer.initialize();
 
       const config = producer.getConfiguration();
-      console.assert(config.compression === CompressionTypes.Snappy, 'Reliable should use Snappy compression');
+      console.assert(
+        config.compression === CompressionTypes.Snappy,
+        'Reliable should use Snappy compression'
+      );
 
       logger.info(' Reliable producer configured successfully');
     } finally {
@@ -98,7 +109,10 @@ export class ProducerConfigTests {
 
       const config = producer.getConfiguration();
       console.assert(config.compression === CompressionTypes.GZIP, 'Custom config should use GZIP');
-      console.assert(config.batching.maxBatchSize === 4096, 'Custom config should have correct batch size');
+      console.assert(
+        config.batching.maxBatchSize === 4096,
+        'Custom config should have correct batch size'
+      );
       console.assert(config.timeout === 15000, 'Custom config should have correct timeout');
 
       logger.info(' Custom producer configured successfully');
@@ -126,7 +140,10 @@ export class ProducerConfigTests {
       });
 
       const config = producer.getConfiguration();
-      console.assert(config.compression === CompressionTypes.LZ4, 'Configuration should be updated');
+      console.assert(
+        config.compression === CompressionTypes.LZ4,
+        'Configuration should be updated'
+      );
       console.assert(config.batching.maxBatchSize === 2048, 'Batch size should be updated');
 
       logger.info(' Producer configuration updated successfully');
@@ -242,7 +259,6 @@ export async function benchmarkProducerConfigurations() {
         duration,
         messagesPerSecond: Math.round(messagesPerSecond)
       });
-
     } catch (error) {
       logger.error(`Benchmark failed for ${config.name}`, { error });
     } finally {

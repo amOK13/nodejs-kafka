@@ -297,8 +297,12 @@ describe('MetadataManager', () => {
         priority: 11
       };
 
-      expect(manager.validateMetadata(invalidMetadata1).errors).toContain('priority must be between 0 and 10');
-      expect(manager.validateMetadata(invalidMetadata2).errors).toContain('priority must be between 0 and 10');
+      expect(manager.validateMetadata(invalidMetadata1).errors).toContain(
+        'priority must be between 0 and 10'
+      );
+      expect(manager.validateMetadata(invalidMetadata2).errors).toContain(
+        'priority must be between 0 and 10'
+      );
     });
 
     test('should validate TTL', () => {

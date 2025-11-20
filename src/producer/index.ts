@@ -15,7 +15,7 @@ async function main(): Promise<void> {
     serializationFormat: 'json',
     enableValidation: true,
     schema: new JsonMessageSchema(),
-    preset: process.env.KAFKA_PRODUCER_PRESET as any || 'balanced',
+    preset: (process.env.KAFKA_PRODUCER_PRESET as any) || 'balanced',
     config: {
       compression: {
         type: CompressionTypes.Snappy
@@ -54,12 +54,6 @@ async function main(): Promise<void> {
         return;
       }
     } else {
-      if (process.env.NODE_ENV === 'development') {
-        logger.error('Interactive mode is only available in development environment (NODE_ENV=development)');
-        logger.info('Usage: npm run producer "Your message here"');
-        process.exit(1);
-      }
-
       const messageText = args.join(' ');
       await producer.sendMessage({
         text: messageText,
@@ -84,8 +78,8 @@ async function interactiveMode(producer: MessageProducer): Promise<void> {
   logger.info('Interactive mode started. Type messages to send (Ctrl+C to exit):');
 
   const askForMessage = (): Promise<void> => {
-    return new Promise((resolve) => {
-      rl.question('Enter message (or press Enter for default): ', async (input) => {
+    return new Promise(resolve => {
+      rl.question('Enter message (or press Enter for default): ', async input => {
         const messageText = input.trim() || `Hello Enhanced Kafka! - ${new Date().toISOString()}`;
 
         const messageObject = {
@@ -100,7 +94,9 @@ async function interactiveMode(producer: MessageProducer): Promise<void> {
             'content-type': 'application/json',
             'producer-mode': 'interactive'
           });
-          logger.info('Enhanced message sent successfully!', { messageId: messageObject.messageId });
+          logger.info('Enhanced message sent successfully!', {
+            messageId: messageObject.messageId
+          });
         } catch (error) {
           logger.error('Failed to send message:', error);
         }

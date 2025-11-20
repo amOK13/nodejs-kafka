@@ -139,7 +139,7 @@ describe('MessageRouter', () => {
       const rule: RoutingRule = {
         id: 'test-rule',
         name: 'Test Rule',
-        condition: (message) => message.type === 'test',
+        condition: message => message.type === 'test',
         targetTopic: 'test-topic',
         priority: 100
       };
@@ -157,7 +157,7 @@ describe('MessageRouter', () => {
       const rule: RoutingRule = {
         id: 'test-rule',
         name: 'Test Rule',
-        condition: (message) => message.type === 'test',
+        condition: message => message.type === 'test',
         targetTopic: 'test-topic',
         priority: 100
       };
@@ -190,7 +190,10 @@ describe('MessageRouter', () => {
 
       expect(result.topic).toBe(defaultTopic);
       expect(result.defaultRoute).toBe(true);
-      expect(consoleSpy).toHaveBeenCalledWith('Error evaluating routing rule error-rule:', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Error evaluating routing rule error-rule:',
+        expect.any(Error)
+      );
 
       consoleSpy.mockRestore();
     });

@@ -8,7 +8,10 @@ export function createKafka(): Kafka {
     brokers: config.kafkaBrokers
   });
 
-  logger.info('Kafka instance created', { clientId: config.kafkaClientId, brokers: config.kafkaBrokers });
+  logger.info('Kafka instance created', {
+    clientId: config.kafkaClientId,
+    brokers: config.kafkaBrokers
+  });
   return kafka;
 }
 
@@ -22,7 +25,9 @@ export async function createProducer(): Promise<Producer> {
 
     return producer;
   } catch (error) {
-    logger.error('Failed to create and connect producer', { error: error instanceof Error ? error.message : error });
+    logger.error('Failed to create and connect producer', {
+      error: error instanceof Error ? error.message : error
+    });
     throw error;
   }
 }
@@ -38,7 +43,9 @@ export async function createConsumer(groupIdOverride?: string): Promise<Consumer
 
     return consumer;
   } catch (error) {
-    logger.error('Failed to create and connect consumer', { error: error instanceof Error ? error.message : error });
+    logger.error('Failed to create and connect consumer', {
+      error: error instanceof Error ? error.message : error
+    });
     throw error;
   }
 }

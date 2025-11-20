@@ -1,4 +1,8 @@
-import { TransactionManager, TransactionMessage, createTransactionManager } from './transactionManager';
+import {
+  TransactionManager,
+  TransactionMessage,
+  createTransactionManager
+} from './transactionManager';
 import { Producer, Transaction } from 'kafkajs';
 
 // Mock KafkaJS Producer
@@ -59,9 +63,7 @@ describe('TransactionManager', () => {
     test('should throw error when starting transaction while one is active', async () => {
       await transactionManager.beginTransaction();
 
-      await expect(transactionManager.beginTransaction()).rejects.toThrow(
-        'Transaction txn_'
-      );
+      await expect(transactionManager.beginTransaction()).rejects.toThrow('Transaction txn_');
     });
 
     test('should commit transaction successfully', async () => {
@@ -107,7 +109,7 @@ describe('TransactionManager', () => {
           topic: 'test-topic-1',
           key: 'key1',
           value: Buffer.from('message1'),
-          headers: { 'header1': Buffer.from('value1') }
+          headers: { header1: Buffer.from('value1') }
         },
         {
           topic: 'test-topic-1',
@@ -125,7 +127,7 @@ describe('TransactionManager', () => {
             partition: undefined,
             key: Buffer.from('key1'),
             value: Buffer.from('message1'),
-            headers: { 'header1': Buffer.from('value1') },
+            headers: { header1: Buffer.from('value1') },
             timestamp: undefined
           },
           {
@@ -169,9 +171,7 @@ describe('TransactionManager', () => {
       });
       expect(mockProducer.send).toHaveBeenCalledWith({
         topic: 'topic-2',
-        messages: [
-          expect.objectContaining({ value: Buffer.from('message2') })
-        ]
+        messages: [expect.objectContaining({ value: Buffer.from('message2') })]
       });
     });
 
@@ -248,7 +248,9 @@ describe('TransactionManager', () => {
 
   describe('Error Handling', () => {
     test('should handle producer transaction creation failure', async () => {
-      mockProducer.transaction = jest.fn().mockRejectedValue(new Error('Transaction creation failed'));
+      mockProducer.transaction = jest
+        .fn()
+        .mockRejectedValue(new Error('Transaction creation failed'));
 
       await expect(transactionManager.beginTransaction()).rejects.toThrow(
         'Failed to start transaction: Transaction creation failed'
