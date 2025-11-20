@@ -8,12 +8,20 @@
   },
   "scripts": {
     "build": "tsc",
-    "producer": "node dist/producer/index.js",
-    "consumer": "node dist/consumer/index.js",
-    "dev:producer": "ts-node src/producer/index.ts",
+    "start:producer": "node dist/producer/index.js",
+    "start:consumer": "node dist/consumer/index.js",
+    "producer": "npm run build && npm run start:producer",
+    "consumer": "npm run build && npm run start:consumer",
+    "dev:producer": "NODE_ENV=development ts-node src/producer/index.ts",
     "dev:consumer": "ts-node src/consumer/index.ts",
     "clean": "rimraf dist",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docker:build": "docker build -t nodejs-kafka .",
+    "docker:up": "docker-compose -f docker/docker-compose.yml up -d",
+    "docker:down": "docker-compose -f docker/docker-compose.yml down",
+    "docker:logs": "docker-compose -f docker/docker-compose.yml logs -f",
+    "docker:producer": "docker-compose -f docker/docker-compose.yml exec producer sh",
+    "docker:consumer": "docker-compose -f docker/docker-compose.yml logs -f consumer"
   },
   "keywords": [
     "nodejs",
@@ -24,7 +32,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "kafkajs": "^2.2.4"
+    "kafkajs": "^2.2.4",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

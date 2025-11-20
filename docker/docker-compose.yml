@@ -43,3 +43,43 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+
+  producer:
+    build: 
+      context: ..
+      dockerfile: Dockerfile
+    container_name: kafka-producer
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_CLIENT_ID: nodejs-kafka-producer
+      KAFKA_GROUP_ID: nodejs-kafka-group
+      KAFKA_TOPIC: test-topic
+      NODE_ENV: production
+    command: ["node", "dist/producer/index.js"]
+    stdin_open: true
+    tty: true
+    networks:
+      - default
+ 
+  consumer:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: kafka-consumer
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_CLIENT_ID: nodejs-kafka-consumer
+      KAFKA_GROUP_ID: nodejs-kafka-group
+      KAFKA_TOPIC: test-topic
+      NODE_ENV: production
+    command: ["node", "dist/consumer/index.js"]
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge

@@ -1,13 +1,22 @@
-export interface KafkaConfig {
-  brokers: string[];
-  clientId: string;
-  groupId: string;
-  topic: string;
+import 'dotenv/config';
+
+export interface AppConfig {
+  kafkaBrokers: string[];
+  kafkaTopic: string;
+  kafkaConsumerGroupId: string;
+  kafkaClientId: string;
 }
 
-export const kafkaConfig: KafkaConfig = {
-  brokers: process.env.KAFKA_BROKERS?.split(',') || ['localhost:9092'],
-  clientId: process.env.KAFKA_CLIENT_ID || 'nodejs-kafka-client',
-  groupId: process.env.KAFKA_GROUP_ID || 'nodejs-kafka-group',
-  topic: process.env.KAFKA_TOPIC || 'test-topic'
+function parseKafkaBrokers(brokersEnv?: string): string[] {
+  if (!brokersEnv) {
+    return [process.env.KAFKA_DEFAULT_BROKER || "localhost:9092"];
+  }
+  return brokersEnv.split(',').map(broker => broker.trim());
+}
+
+export const config: AppConfig = {
+  kafkaBrokers: parseKafkaBrokers(process.env.KAFKA_BROKERS),
+  kafkaTopic: process.env.KAFKA_TOPIC || "example-topic",
+  kafkaConsumerGroupId: process.env.KAFKA_CONSUMER_GROUP_ID || "example-consumer-group",
+  kafkaClientId: process.env.KAFKA_CLIENT_ID || "nodejs-kafka-client"
 };
