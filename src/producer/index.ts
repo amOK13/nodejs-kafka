@@ -1,27 +1,51 @@
 import { MessageProducer } from './producer';
 import { logger } from '../common/logger';
 import { JsonMessageSchema } from '../common/messageValidator';
+import { CompressionTypes } from 'kafkajs';
 import * as readline from 'readline';
 
 async function main(): Promise<void> {
-  logger.info(`Starting Enhanced Kafka Producer`);
+  logger.info('Starting Enhanced Kafka Producer');
   logger.info(`Environment: ${process.env.NODE_ENV || 'undefined'}`);
   logger.info(`Kafka Brokers: ${process.env.KAFKA_BROKERS || 'localhost:9092'}`);
   logger.info(`Topic: ${process.env.KAFKA_TOPIC || 'test-topic'}`);
   logger.info(`Client ID: ${process.env.KAFKA_CLIENT_ID || 'nodejs-kafka-client'}`);
 
-  // Configuration du producer avec validation JSON et sérialisation
   const producer = new MessageProducer({
     serializationFormat: 'json',
     enableValidation: true,
-    schema: new JsonMessageSchema()
+    schema: new JsonMessageSchema(),
+    preset: process.env.KAFKA_PRODUCER_PRESET as any || 'balanced',
+    config: {
+      compression: {
+        type: CompressionTypes.Snappy
+      },
+      batching: {
+        maxBatchSize: 8192,
+        lingerMs: 50,
+        maxInFlightRequests: 5
+      },
+      retry: {
+        retries: 5,
+        initialRetryTime: 300,
+        maxRetryTime: 30000
+      },
+      timeout: {
+        requestTimeoutMs: 30000,
+        acks: 1
+      },
+      performance: {
+        idempotent: true,
+        transactionTimeout: 60000
+      }
+    }
   });
-  
+
   try {
     await producer.initialize();
 
     const args = process.argv.slice(2);
-    
+
     if (args.length === 0) {
       if (process.env.NODE_ENV === 'development') {
         await interactiveMode(producer);
@@ -35,10 +59,10 @@ async function main(): Promise<void> {
         logger.info('Usage: npm run producer "Your message here"');
         process.exit(1);
       }
-      
+
       const messageText = args.join(' ');
-      await producer.sendMessage({ 
-        text: messageText, 
+      await producer.sendMessage({
+        text: messageText,
         timestamp: new Date().toISOString(),
         source: 'cli-producer'
       });
@@ -58,19 +82,19 @@ async function interactiveMode(producer: MessageProducer): Promise<void> {
   });
 
   logger.info('Interactive mode started. Type messages to send (Ctrl+C to exit):');
-  
+
   const askForMessage = (): Promise<void> => {
     return new Promise((resolve) => {
       rl.question('Enter message (or press Enter for default): ', async (input) => {
         const messageText = input.trim() || `Hello Enhanced Kafka! - ${new Date().toISOString()}`;
-        
+
         const messageObject = {
           text: messageText,
           timestamp: new Date().toISOString(),
           source: 'interactive-producer',
           messageId: Math.random().toString(36).substr(2, 9)
         };
-        
+
         try {
           await producer.sendMessage(messageObject, `msg-${messageObject.messageId}`, {
             'content-type': 'application/json',

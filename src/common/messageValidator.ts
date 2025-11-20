@@ -7,15 +7,15 @@ export class TextMessageSchema implements MessageSchema {
     if (typeof message !== 'string') {
       return { isValid: false, error: 'Message must be a string' };
     }
-    
+
     if (message.trim().length === 0) {
       return { isValid: false, error: 'Message cannot be empty' };
     }
-    
+
     if (message.length > 10000) {
       return { isValid: false, error: 'Message too long (max 10000 characters)' };
     }
-    
+
     return { isValid: true };
   }
 }

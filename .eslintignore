@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+*.d.ts
+jest.config.js
+docker/
+README.md
+.git/
+.vscode/

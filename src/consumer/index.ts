@@ -2,7 +2,7 @@ import { MessageConsumer } from './consumer';
 import { logger } from '../common/logger';
 
 async function main(): Promise<void> {
-  logger.info(`Starting Kafka Consumer`);
+  logger.info('Starting Kafka Consumer');
   logger.info(`Environment: ${process.env.NODE_ENV || 'undefined'}`);
   logger.info(`Kafka Brokers: ${process.env.KAFKA_BROKERS || 'localhost:9092'}`);
   logger.info(`Topic: ${process.env.KAFKA_TOPIC || 'test-topic'}`);
@@ -10,7 +10,7 @@ async function main(): Promise<void> {
   logger.info(`Group ID: ${process.env.KAFKA_GROUP_ID || 'nodejs-kafka-group'}`);
 
   const consumer = new MessageConsumer();
-  
+
   try {
     await consumer.initialize();
     logger.info('Starting to consume messages...');

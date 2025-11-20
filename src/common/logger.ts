@@ -1,4 +1,4 @@
-type LogLevel = "INFO" | "ERROR" | "DEBUG";
+type LogLevel = 'INFO' | 'ERROR' | 'DEBUG';
 
 interface LogEntry {
   timestamp: string;
@@ -13,24 +13,24 @@ function createLogEntry(level: LogLevel, message: string, meta?: unknown): strin
     level,
     message
   };
-  
+
   if (meta !== undefined) {
     entry.meta = meta;
   }
-  
+
   return JSON.stringify(entry);
 }
 
 export const logger = {
   info(message: string, meta?: unknown): void {
-    console.log(createLogEntry("INFO", message, meta));
+    console.log(createLogEntry('INFO', message, meta));
   },
 
   error(message: string, meta?: unknown): void {
-    console.error(createLogEntry("ERROR", message, meta));
+    console.error(createLogEntry('ERROR', message, meta));
   },
 
   debug(message: string, meta?: unknown): void {
-    console.log(createLogEntry("DEBUG", message, meta));
+    console.log(createLogEntry('DEBUG', message, meta));
   }
 };
