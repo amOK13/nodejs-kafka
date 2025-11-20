@@ -1,15 +1,21 @@
 import { MessageProducer } from './producer';
 import { logger } from '../common/logger';
+import { JsonMessageSchema } from '../common/messageValidator';
 import * as readline from 'readline';
 
 async function main(): Promise<void> {
-  logger.info(`Starting Kafka Producer`);
+  logger.info(`Starting Enhanced Kafka Producer`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'undefined'}`);
   logger.info(`Kafka Brokers: ${process.env.KAFKA_BROKERS || 'localhost:9092'}`);
   logger.info(`Topic: ${process.env.KAFKA_TOPIC || 'test-topic'}`);
   logger.info(`Client ID: ${process.env.KAFKA_CLIENT_ID || 'nodejs-kafka-client'}`);
 
-  const producer = new MessageProducer();
+  // Configuration du producer avec validation JSON et sérialisation
+  const producer = new MessageProducer({
+    serializationFormat: 'json',
+    enableValidation: true,
+    schema: new JsonMessageSchema()
+  });
   
   try {
     await producer.initialize();
@@ -30,7 +36,12 @@ async function main(): Promise<void> {
         process.exit(1);
       }
       
-      await producer.sendMessage(args.join(' '));
+      const messageText = args.join(' ');
+      await producer.sendMessage({ 
+        text: messageText, 
+        timestamp: new Date().toISOString(),
+        source: 'cli-producer'
+      });
     }
   } catch (error) {
     logger.error('Producer error:', error);
@@ -50,12 +61,22 @@ async function interactiveMode(producer: MessageProducer): Promise<void> {
   
   const askForMessage = (): Promise<void> => {
     return new Promise((resolve) => {
-      rl.question('Enter message (or press Enter for "Hello Kafka!"): ', async (input) => {
-        const message = input.trim() || `Hello Kafka! - ${new Date().toISOString()}`;
+      rl.question('Enter message (or press Enter for default): ', async (input) => {
+        const messageText = input.trim() || `Hello Enhanced Kafka! - ${new Date().toISOString()}`;
+        
+        const messageObject = {
+          text: messageText,
+          timestamp: new Date().toISOString(),
+          source: 'interactive-producer',
+          messageId: Math.random().toString(36).substr(2, 9)
+        };
         
         try {
-          await producer.sendMessage(message);
-          logger.info('Message sent successfully!');
+          await producer.sendMessage(messageObject, `msg-${messageObject.messageId}`, {
+            'content-type': 'application/json',
+            'producer-mode': 'interactive'
+          });
+          logger.info('Enhanced message sent successfully!', { messageId: messageObject.messageId });
         } catch (error) {
           logger.error('Failed to send message:', error);
         }
