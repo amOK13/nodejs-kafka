@@ -1,8 +1,8 @@
 import { MessageConsumer } from './consumer';
 import { logger } from '../common/logger';
 
-async function main(): Promise<void> {
-  logger.info('Starting Kafka Consumer');
+async function runConsumer(): Promise<void> {
+  logger.info('Starting Kafka Consumer....');
   logger.info(`Environment: ${process.env.NODE_ENV || 'undefined'}`);
   logger.info(`Kafka Brokers: ${process.env.KAFKA_BROKERS || 'localhost:9092'}`);
   logger.info(`Topic: ${process.env.KAFKA_TOPIC || 'test-topic'}`);
@@ -13,20 +13,27 @@ async function main(): Promise<void> {
 
   try {
     await consumer.initialize();
-    logger.info('Starting to consume messages...');
+    logger.info('Consumer initialized.....');
     await consumer.startConsuming();
   } catch (error) {
-    logger.error('Consumer error:', error);
-    process.exit(1);
-  }
+    logger.error('Consumer startup failed', {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined
+    });
 
-  process.on('SIGINT', async () => {
-    logger.info('Shutting down consumer...');
-    await consumer.stop();
-    process.exit(0);
-  });
+    if (!consumer.isShuttingDownStatus()) {
+      process.exit(1);
+    }
+  }
 }
 
 if (require.main === module) {
-  main().catch(console.error);
+  runConsumer().catch(error => {
+    logger.error('Unhandled consumer error', {
+      error: error instanceof Error ? error.message : error
+    });
+    process.exit(1);
+  });
 }
+
+export { runConsumer };
